@@ -97,7 +97,7 @@ export default function Header() {
       <header>
         <div className="container">
           <h1>
-            <img src={Logo} alt="" className="logo" /> Cloudblitz Flight
+            <img src={Logo} alt="" className="logo" /> VanRaj Flight
             Reservation System
           </h1>
           <nav>
