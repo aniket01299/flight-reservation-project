@@ -1,5 +1,5 @@
 provider "aws" {
-    region = "eu-north-1"
+    region = "ap-south-1"
 }
 
 module "rds" {
@@ -8,7 +8,7 @@ module "rds" {
 
 module "eks" {
     source = "./modules/eks"
-    project = "cbz"
+    project = "ARS"
     desired_nodes = 2
     max_nodes  = 2
     min_nodes  = 2
