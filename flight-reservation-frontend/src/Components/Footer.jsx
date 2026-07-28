@@ -4,8 +4,8 @@ export default function () {
       <footer>
         <div className="container">
           <p>
-            &copy; 2024 Flight Reservation System. All rights reserved. Designed
-            and developed by Cloudblitz
+            &copy; 2026 Flight Reservation System. All rights reserved. Designed
+            and developed by Aniket Siraskar
           </p>
         </div>
       </footer>
