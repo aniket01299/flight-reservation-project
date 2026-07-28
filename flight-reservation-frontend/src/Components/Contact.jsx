@@ -13,9 +13,9 @@ export default function Contact() {
                 <div className="col-md-5">
                     <h2>Contact Us</h2>
                     <br />
-                    <p><i className='bx bxs-map'></i>&nbsp;&nbsp;Vidhya Nagar, Shivganga Tower, fourth floor</p>
-                    <p><i className='bx bxs-phone'></i>&nbsp;&nbsp;9754947747</p>
-                    <p><i className='bx bxs-envelope'></i>&nbsp;&nbsp;shivamlowanshi@gmail.com</p>
+                    <p><i className='bx bxs-map'></i>&nbsp;&nbsp;Chatrapati Colony , VamRaj Tower, fourth floor</p>
+                    <p><i className='bx bxs-phone'></i>&nbsp;&nbsp;9307063321</p>
+                    <p><i className='bx bxs-envelope'></i>&nbsp;&nbsp;aniketsiraskar9@gmail.com</p>
                 </div>
                 <div className="col-md-6">
                     <h2>Stay In Touch</h2>
