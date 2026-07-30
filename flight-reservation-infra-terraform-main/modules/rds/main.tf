@@ -1,9 +1,13 @@
-# Fetch the default VPC
+############################################
+# Get Default VPC
+############################################
 data "aws_vpc" "default" {
   default = true
 }
 
-# Fetch the default Subnet IDs
+############################################
+# Get Default Subnets
+############################################
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
@@ -11,55 +15,107 @@ data "aws_subnets" "default" {
   }
 }
 
-# Use the first default Subnet (for simplicity)
-data "aws_subnet" "default" {
-  id = data.aws_subnets.default.ids[0]
+############################################
+# DB Subnet Group
+############################################
+resource "aws_db_subnet_group" "vanraj_db_subnet_group" {
+  name       = "vanraj-db-subnet-group"
+  subnet_ids = data.aws_subnets.default.ids
+
+  tags = {
+    Name = "VanRaj DB Subnet Group"
+  }
 }
 
-# Create a Security Group for RDS
-resource "aws_security_group" "rds_sg" {
-  vpc_id = data.aws_vpc.default.id
+############################################
+# Security Group
+############################################
+resource "aws_security_group" "vanraj_rds_sg" {
+  name        = "vanraj-rds-sg"
+  description = "Security Group for VanRaj MySQL RDS"
+  vpc_id      = data.aws_vpc.default.id
+
   ingress {
+    description = "MySQL"
+
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Open access (use cautiously, better to restrict in production)
+
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
   }
+
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
   }
+
   tags = {
-    Name = "rds-sg"
+    Name = "VanRaj-RDS-SG"
   }
 }
 
-# Create an RDS MySQL Instance
-resource "aws_db_instance" "cbz_db_instance" {
-  allocated_storage    = 20
+############################################
+# RDS MySQL Instance
+############################################
+resource "aws_db_instance" "vanraj_db" {
+
+  identifier = "vanraj-db"
+
+  engine         = "mysql"
+  engine_version = "8.0"
+
+  instance_class = "db.t3.micro"
+
+  allocated_storage     = 20
   max_allocated_storage = 100
-  engine               = "mysql"
-  engine_version       = "8.0"
-  instance_class       = "db.t3.micro" # Free-tier eligible instance type
-  username             = "admin"
-  password             = "Redhat123"
+  storage_type          = "gp3"
+
+  db_name  = "flightdb"
+
+  username = "admin"
+  password = "VanRaj@12345"
+
   parameter_group_name = "default.mysql8.0"
-  publicly_accessible  = true
-  vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  db_subnet_group_name = aws_db_subnet_group.default.name
-  skip_final_snapshot  = true
+
+  publicly_accessible = true
+
+  vpc_security_group_ids = [
+    aws_security_group.vanraj_rds_sg.id
+  ]
+
+  db_subnet_group_name = aws_db_subnet_group.vanraj_db_subnet_group.name
+
+  backup_retention_period = 7
+
+  skip_final_snapshot = true
+
+  deletion_protection = false
+
   tags = {
-    Name = "cbz-db-instance"
+    Name = "VanRaj-MySQL-RDS"
+    Env  = "dev"
   }
 }
 
-# Create a DB Subnet Group using default subnets
-resource "aws_db_subnet_group" "default" {
-  name       = "default-db-subnet-group-1"
-  subnet_ids = data.aws_subnets.default.ids
-  tags = {
-    Name = "default-db-subnet-group"
-  }
+############################################
+# Outputs
+############################################
+output "rds_endpoint" {
+  value = aws_db_instance.vanraj_db.endpoint
+}
+
+output "database_name" {
+  value = aws_db_instance.vanraj_db.db_name
+}
+
+output "database_port" {
+  value = aws_db_instance.vanraj_db.port
 }
