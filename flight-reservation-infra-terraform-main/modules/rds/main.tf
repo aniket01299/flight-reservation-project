@@ -72,7 +72,7 @@ resource "aws_db_instance" "vanraj_db" {
   engine         = "mysql"
   engine_version = "8.0"
 
-  instance_class = "db.t3.micro"
+  instance_class = "c7i-flex.large"
 
   allocated_storage     = 20
   max_allocated_storage = 100
@@ -81,7 +81,7 @@ resource "aws_db_instance" "vanraj_db" {
   db_name  = "flightdb"
 
   username = "admin"
-  password = "VanRaj@12345"
+  password = "VanRaj12345"
 
   parameter_group_name = "default.mysql8.0"
 
