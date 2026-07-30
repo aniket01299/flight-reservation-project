@@ -107,7 +107,7 @@ resource "aws_eks_node_group" "vanraj_nodegroup" {
     min_size     = 1
   }
 
-  instance_types = ["t3.medium"]
+  instance_types = ["c7i-flex.large"]
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
