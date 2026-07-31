@@ -72,7 +72,7 @@ resource "aws_db_instance" "vanraj_db" {
   engine         = "mysql"
   engine_version = "8.0"
 
-  instance_class = "c7i-flex.large"
+  instance_class = "db.t3.micro"
 
   allocated_storage     = 20
   max_allocated_storage = 100
