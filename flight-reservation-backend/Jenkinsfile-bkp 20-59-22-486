@@ -1,104 +1,81 @@
 pipeline {
     agent any
-    
+
     environment {
-        DOCKER_REGISTRY = 'docker.io/shubhamkalsait1'
-        DOCKER_IMAGE_NAME = 'flight-reservation-app'
-        DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
-        MAVEN_HOME = tool 'Maven'
-        JAVA_HOME = tool 'JDK17'
-        SONAR_HOST_URL = 'http://3.9.176.140:9000'
-       // SONAR_TOKEN = credentials('sonar-cred')
+        DOCKER_USER = 'aniiket2025'
+        DOCKER_REPO = 'flight-reservation-app'
+        CLUSTER_NAME = 'VanRaj-cluster'
+        REGION = 'ap-south-1'
+        SONAR_HOST_URL = 'http://3.108.56.127:9000'
     }
-    
+
     stages {
-        stage('PULL') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/shubhamkalsait/Flight-reservation.git'
+                git branch: 'main', url: 'https://github.com/aniket01299/flight-reservation-project.git'
             }
         }
-        
-        stage('BUILD') {
+
+        stage('Build & Test') {
             steps {
-                sh '''
-                    cd FlightReservationApplication
-                    ${MAVEN_HOME}/bin/mvn clean package -DskipTests
-                '''
+                sh 'mvn clean package'
             }
         }
-        
-        stage('Test') {
+
+        stage('SonarQube Analysis') {
             steps {
-                sh '''
-                    cd FlightReservationApplication
-                    ${MAVEN_HOME}/bin/mvn test
-                '''
-            }
-        }
-        stage('QA') {
-            steps {
-                withSonarQubeEnv(installationName: 'sonarqube', credentialsId: 'sonar-cred') {
-                    sh '''
-                        cd FlightReservationApplication
-                        ${MAVEN_HOME}/bin/mvn sonar:sonar -Dsonar.projectKey=flight-reservation-app
-                    '''
+                withSonarQubeEnv(installationName: 'sonarqube', credentialsId: 'Sonar') {
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=flight-reservation-app'
                 }
             }
         }
+
         stage('Quality Gate') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
-        stage('DOCKER BUILD') {
+
+        stage('Docker Build & Push') {
             steps {
-                script {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh '''
-                        cd FlightReservationApplication
-                        docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
+                        docker build -t ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER} .
+                        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                        docker push ${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}
                     '''
-                    //docker.build("${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}")
                 }
             }
         }
-        stage('DOCKER PUSH') {
+
+        stage('Update K8s Manifest') {
             steps {
-                script {
-                    docker.withRegistry('', 'docker-cred') {
-                        docker.image("${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}").push()
-                    }
-                }
+                sh '''
+                    sed -i "s|${DOCKER_USER}/${DOCKER_REPO}:latest|${DOCKER_USER}/${DOCKER_REPO}:${BUILD_NUMBER}|g" k8s/deployment.yaml
+                '''
             }
         }
-        stage('DEPLOY') {
+
+        stage('Deploy to EKS') {
             steps {
-                script {
-                    // Assuming you're using Kubernetes for deployment
+                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'AWS-Cred', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
-                        kubectl set image deployment/flight-reservation-app --namespace flight-reservation \
-                            flight-reservation-app=${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} 
-                        #cd FlightReservationApplication
-                        #kubectl apply -f k8s/
+                        aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION}
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
                     '''
                 }
             }
         }
     }
+
     post {
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
-        }
         always {
             cleanWs()
         }
     }
-} 
-
-
+}
 
 
